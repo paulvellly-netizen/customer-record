@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SalesTrack – SaskTel Sales Activity Tracker</title>
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --navy: #0f2644;
+  --navy-mid: #1a3a5c;
+  --navy-light: #234e78;
+  --accent: #0077c8;
+  --accent-hover: #005fa3;
+  --accent-light: #e8f3fc;
+  --green: #1a8a4a;
+  --green-light: #e6f5ed;
+  --amber: #c47a00;
+  --amber-light: #fff5e0;
+  --red: #c0392b;
+  --red-light: #fdecea;
+  --grey-50: #f8f9fb;
+  --grey-100: #f0f2f5;
+  --grey-200: #e2e6ec;
+  --grey-300: #c8d0db;
+  --grey-400: #8f9db0;
+  --grey-500: #5c6b80;
+  --grey-700: #2c3a4a;
+  --grey-900: #111820;
+  --white: #ffffff;
+  --sidebar-w: 240px;
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+  --shadow: 0 4px 12px rgba(0,0,0,.08), 0 2px 4px rgba(0,0,0,.05);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,.12), 0 4px 8px rgba(0,0,0,.06);
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  --bg: var(--grey-50);
+  --surface: var(--white);
+  --border: var(--grey-200);
+  --text: var(--grey-900);
+  --text-muted: var(--grey-500);
+  --text-inv: var(--white);
+  --sidebar-bg: var(--navy);
+  --sidebar-text: rgba(255,255,255,.75);
+  --sidebar-active: rgba(255,255,255,.12);
+  --sidebar-hover: rgba(255,255,255,.07);
+  --input-bg: var(--white);
+  --input-border: var(--grey-300);
+  --card-bg: var(--white);
+}
+[data-theme="dark"] {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text-muted: #7d8590;
+  --accent-light: #132334;
+  --green-light: #0d2818;
+  --amber-light: #1f1a00;
+  --red-light: #1f0d0d;
+  --grey-50: #161b22;
+  --grey-100: #1c2128;
+  --grey-200: #30363d;
+  --grey-300: #484f58;
+  --grey-400: #6e7681;
+  --card-bg: #161b22;
+  --input-bg: #0d1117;
+  --input-border: #30363d;
+  --sidebar-bg: #0a0f16;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.3);
+  --shadow: 0 4px 12px rgba(0,0,0,.4);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;display:flex;transition:background .2s,color .2s}
+
+/* ===== SIDEBAR ===== */
+#sidebar{
+  width:var(--sidebar-w);flex-shrink:0;background:var(--sidebar-bg);
+  display:flex;flex-direction:column;height:100vh;position:sticky;top:0;
+  overflow-y:auto;z-index:100;transition:transform .25s;
+}
+.sidebar-brand{padding:24px 20px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand-icon{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-icon svg{width:20px;height:20px;fill:white}
+.brand-name{color:white;font-size:1.05rem;font-weight:700;line-height:1.2}
+.brand-sub{color:rgba(255,255,255,.45);font-size:.72rem;letter-spacing:.03em}
+.sidebar-nav{flex:1;padding:12px 0}
+.nav-section{padding:14px 20px 6px;color:rgba(255,255,255,.3);font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;margin:1px 8px;border-radius:8px;cursor:pointer;color:var(--sidebar-text);font-size:.875rem;font-weight:500;transition:all .15s;border:none;background:none;width:calc(100% - 16px);text-align:left}
+.nav-item:hover{background:var(--sidebar-hover);color:white}
+.nav-item.active{background:var(--sidebar-active);color:white}
+.nav-item svg{width:18px;height:18px;flex-shrink:0;opacity:.7}
+.nav-item.active svg,.nav-item:hover svg{opacity:1}
+.nav-badge{margin-left:auto;background:var(--red);color:white;font-size:.65rem;font-weight:700;padding:2px 7px;border-radius:10px;min-width:20px;text-align:center}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08)}
+.online-indicator{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.45);font-size:.75rem}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--grey-400);transition:.3s}
+.status-dot.online{background:#2ea44f}
+.status-dot.offline{background:var(--red)}
+
+/* ===== MAIN CONTENT ===== */
+#main{flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:50;box-shadow:var(--shadow-sm)}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.mobile-menu-btn{display:none;background:none;border:none;color:var(--text);cursor:pointer;padding:6px}
+.page-title{font-size:1.1rem;font-weight:700;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:8px 16px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s;border:none;font-family:var(--font)}
+.btn svg{width:16px;height:16px}
+.btn-primary{background:var(--accent);color:white}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,119,200,.3)}
+.btn-secondary{background:var(--grey-100);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--grey-200)}
+.btn-danger{background:var(--red);color:white}
+.btn-danger:hover{background:#a93226}
+.btn-success{background:var(--green);color:white}
+.btn-success:hover{background:#156f3b}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid transparent}
+.btn-ghost:hover{background:var(--grey-100);color:var(--text)}
+.btn-sm{padding:5px 11px;font-size:.78rem}
+.btn-xs{padding:3px 8px;font-size:.72rem}
+.btn-icon{padding:7px;border-radius:var(--radius-sm);background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center;transition:.15s}
+.btn-icon:hover{background:var(--grey-100);color:var(--text)}
+.btn-icon svg{width:18px;height:18px}
+
+/* ===== PAGE CONTAINER ===== */
+#content{flex:1;overflow-y:auto}
+.page{display:none;padding:28px;max-width:1320px;margin:0 auto;animation:fadeIn .18s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.page-header h1{font-size:1.45rem;font-weight:800;color:var(--text);line-height:1.2}
+.page-header p{color:var(--text-muted);font-size:.875rem;margin-top:3px}
+
+/* ===== CARDS ===== */
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm)}
+.card-title{font-size:.8rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+/* ===== STAT CARDS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:.2s}
+.stat-card:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.amber::before{background:var(--amber)}
+.stat-card.red::before{background:var(--red)}
+.stat-label{font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.stat-value{font-size:2rem;font-weight:800;color:var(--text);line-height:1;font-variant-numeric:tabular-nums}
+.stat-sub{font-size:.75rem;color:var(--text-muted);margin-top:5px}
+
+/* ===== FORMS ===== */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group.half{grid-column:span 1}
+label{font-size:.8rem;font-weight:600;color:var(--text-muted)}
+input,select,textarea{background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius-sm);padding:9px 12px;font-size:.875rem;font-family:var(--font);color:var(--text);width:100%;transition:.15s;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,119,200,.12)}
+input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:var(--accent);flex-shrink:0}
+textarea{resize:vertical;min-height:80px;line-height:1.5}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236e7681'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px}
+.checkbox-item{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82rem;color:var(--text);background:var(--grey-100);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;transition:.15s;user-select:none}
+.checkbox-item:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.checkbox-item input[type="checkbox"]{margin:0}
+.checkbox-item.checked{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.form-section{margin-bottom:28px}
+.form-section-title{font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.form-section-title svg{width:14px;height:14px}
+.form-hint{font-size:.72rem;color:var(--text-muted);margin-top:3px}
+.conditional{display:none}
+.conditional.visible{display:block}
+
+/* ===== TABLE ===== */
+.table-wrapper{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+thead{background:var(--grey-100)}
+th{padding:11px 14px;text-align:left;font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text)}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:.1s}
+tbody tr:hover{background:var(--grey-50)}
+.td-actions{display:flex;gap:4px;align-items:center}
+
+/* ===== BADGES ===== */
+.badge{display:inline-flex;align-items:center;font-size:.7rem;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.badge-blue{background:var(--accent-light);color:var(--accent)}
+.badge-green{background:var(--green-light);color:var(--green)}
+.badge-amber{background:var(--amber-light);color:var(--amber)}
+.badge-red{background:var(--red-light);color:var(--red)}
+.badge-grey{background:var(--grey-100);color:var(--text-muted)}
+
+/* ===== SEARCH / FILTER BAR ===== */
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end}
+.filter-bar input,.filter-bar select{flex:1;min-width:140px;max-width:260px}
+.search-box{position:relative;flex:1;min-width:200px;max-width:320px}
+.search-box svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);width:16px;height:16px;pointer-events:none}
+.search-box input{padding-left:34px}
+
+/* ===== MODAL ===== */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:540px;max-height:90vh;display:flex;flex-direction:column;animation:modalIn .2s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal.wide{max-width:800px}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-header h3{font-size:1.05rem;font-weight:700}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0}
+.close-btn{background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center;padding:4px;border-radius:6px;transition:.15s}
+.close-btn:hover{background:var(--grey-100);color:var(--text)}
+.close-btn svg{width:20px;height:20px}
+
+/* ===== TOAST ===== */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:2000;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.toast{background:var(--grey-900);color:white;padding:12px 18px;border-radius:var(--radius);font-size:.85rem;font-weight:500;box-shadow:var(--shadow-lg);pointer-events:all;display:flex;align-items:center;gap:10px;max-width:340px;animation:toastIn .25s ease;border-left:3px solid var(--accent)}
+.toast.success{border-left-color:var(--green)}
+.toast.error{border-left-color:var(--red)}
+.toast.warning{border-left-color:var(--amber)}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.toast svg{width:16px;height:16px;flex-shrink:0}
+
+/* ===== DASHBOARD SPECIFIC ===== */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px}
+.dash-recent{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-sm)}
+.dash-section-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.dash-section-header h3{font-size:.875rem;font-weight:700;color:var(--text)}
+.interaction-item{padding:12px 20px;border-bottom:1px solid var(--border);cursor:pointer;transition:.1s}
+.interaction-item:last-child{border-bottom:none}
+.interaction-item:hover{background:var(--grey-50)}
+.interaction-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px}
+.interaction-item-name{font-size:.84rem;font-weight:600;color:var(--text)}
+.interaction-item-time{font-size:.72rem;color:var(--text-muted)}
+.interaction-item-sub{font-size:.78rem;color:var(--text-muted)}
+.empty-state{padding:40px 20px;text-align:center;color:var(--text-muted)}
+.empty-state svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.3}
+.empty-state h4{font-size:.9rem;font-weight:600;color:var(--text);margin-bottom:6px}
+.empty-state p{font-size:.8rem}
+
+/* ===== CALENDAR ===== */
+.calendar-nav{display:flex;align-items:center;gap:12px;margin-bottom:18px;justify-content:center}
+.calendar-nav h3{font-size:1.1rem;font-weight:700;min-width:180px;text-align:center}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-header{padding:8px 4px;text-align:center;font-size:.72rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+.cal-day{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 8px;min-height:72px;cursor:pointer;transition:.15s;position:relative}
+.cal-day:hover{background:var(--accent-light);border-color:var(--accent)}
+.cal-day.today{border-color:var(--accent);background:var(--accent-light)}
+.cal-day.other-month{opacity:.35}
+.cal-day.selected{background:var(--accent);color:white}
+.cal-day.selected .cal-count,.cal-day.selected .cal-date-num{color:white}
+.cal-date-num{font-size:.82rem;font-weight:700;margin-bottom:4px}
+.cal-count{font-size:.68rem;color:var(--text-muted);line-height:1.4}
+.cal-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:3px;vertical-align:middle}
+.cal-dot.wireless{background:var(--accent)}
+.cal-dot.wireline{background:var(--green)}
+.cal-day-detail{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:18px;box-shadow:var(--shadow-sm)}
+
+/* ===== FOLLOW-UPS ===== */
+.followup-section{margin-bottom:22px}
+.followup-section-title{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.followup-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:8px;display:flex;align-items:flex-start;gap:14px;box-shadow:var(--shadow-sm);transition:.15s}
+.followup-card:hover{box-shadow:var(--shadow)}
+.followup-card.overdue{border-left:3px solid var(--red);background:var(--red-light)}
+.followup-card.today{border-left:3px solid var(--amber);background:var(--amber-light)}
+.followup-card.upcoming{border-left:3px solid var(--accent)}
+.followup-card.completed{border-left:3px solid var(--grey-300);opacity:.6}
+.followup-info{flex:1;min-width:0}
+.followup-name{font-size:.875rem;font-weight:700;color:var(--text);margin-bottom:2px}
+.followup-sub{font-size:.78rem;color:var(--text-muted);margin-bottom:6px}
+.followup-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+
+/* ===== REPORTS / CHARTS ===== */
+.chart-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.chart-bar-label{font-size:.78rem;color:var(--text-muted);width:150px;flex-shrink:0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;text-align:right}
+.chart-bar-track{flex:1;height:20px;background:var(--grey-100);border-radius:4px;overflow:hidden}
+.chart-bar-fill{height:100%;background:var(--accent);border-radius:4px;transition:width .4s ease;display:flex;align-items:center;padding-left:8px;font-size:.68rem;font-weight:700;color:white;min-width:28px}
+.chart-bar-fill.green{background:var(--green)}
+.chart-bar-fill.amber{background:var(--amber)}
+.chart-bar-val{font-size:.78rem;color:var(--text-muted);width:32px;flex-shrink:0}
+.report-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;margin-bottom:20px}
+.donut-chart{width:120px;height:120px;position:relative;margin:0 auto}
+.donut-svg{transform:rotate(-90deg)}
+.donut-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;color:var(--text)}
+.donut-sub{font-size:.62rem;color:var(--text-muted);font-weight:500}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--text-muted);margin-bottom:6px}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ===== SETTINGS ===== */
+.settings-section{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);gap:16px}
+.settings-row:last-child{border-bottom:none}
+.settings-label{font-size:.875rem;font-weight:600;color:var(--text);margin-bottom:2px}
+.settings-desc{font-size:.78rem;color:var(--text-muted)}
+.toggle{position:relative;display:inline-block;width:42px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--grey-300);border-radius:24px;cursor:pointer;transition:.2s}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked + .toggle-slider{background:var(--accent)}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px)}
+
+/* ===== DISCLAIMER ===== */
+.disclaimer{background:var(--amber-light);border:1px solid rgba(196,122,0,.25);border-radius:var(--radius-sm);padding:12px 16px;font-size:.78rem;color:var(--amber);margin:16px 0;line-height:1.6}
+.disclaimer strong{display:block;margin-bottom:4px;font-size:.8rem}
+
+/* ===== PRIORITY LABELS ===== */
+.priority-high{color:var(--red);font-weight:700}
+.priority-normal{color:var(--amber)}
+.priority-low{color:var(--grey-400)}
+
+/* ===== MOBILE NAV ===== */
+#mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:200;padding:6px 0 calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+.mobile-nav-inner{display:flex;justify-content:space-around}
+.mob-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;cursor:pointer;color:var(--text-muted);font-size:.65rem;font-weight:600;border:none;background:none;transition:.15s;min-width:52px}
+.mob-nav-item svg{width:20px;height:20px}
+.mob-nav-item.active{color:var(--accent)}
+.mob-nav-badge{position:relative}
+.mob-nav-badge::after{content:attr(data-badge);position:absolute;top:-4px;right:-8px;background:var(--red);color:white;font-size:.6rem;font-weight:700;padding:1px 4px;border-radius:10px;min-width:14px;text-align:center}
+
+/* ===== RECORD DETAIL ===== */
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.detail-item{display:flex;flex-direction:column;gap:3px}
+.detail-key{font-size:.7rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+.detail-val{font-size:.875rem;color:var(--text);word-break:break-word}
+
+/* ===== TABS ===== */
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;gap:0}
+.tab{padding:10px 18px;font-size:.84rem;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ===== BACKUP PAGE ===== */
+.backup-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:40px;text-align:center;cursor:pointer;transition:.2s;background:var(--grey-50)}
+.backup-zone:hover,.backup-zone.drag{border-color:var(--accent);background:var(--accent-light)}
+.backup-zone svg{width:36px;height:36px;color:var(--text-muted);margin:0 auto 12px;display:block}
+.backup-zone p{font-size:.85rem;color:var(--text-muted);margin-top:8px}
+.progress-bar{height:6px;background:var(--grey-200);border-radius:3px;overflow:hidden;margin:8px 0}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  #sidebar{position:fixed;top:0;left:0;height:100vh;transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}
+  #main{padding-bottom:60px}
+  #mobile-nav{display:block}
+  .mobile-menu-btn{display:flex}
+  .page{padding:16px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .dash-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .filter-bar input,.filter-bar select{max-width:100%;flex:1 1 140px}
+  .calendar-nav h3{font-size:.95rem;min-width:140px}
+  .cal-day{min-height:50px}
+  .report-grid{grid-template-columns:1fr}
+  .page-header{flex-direction:column}
+  .topbar{padding:0 16px}
+  .modal{max-width:100%;max-height:95vh}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .stat-value{font-size:1.6rem}
+  .dash-grid{gap:12px}
+}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">SalesTrack</div>
+      <div class="brand-sub">SaskTel Sales Rep</div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <button class="nav-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-item" data-page="add-record">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Add Record
+    </button>
+    <button class="nav-item" data-page="records">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      All Records
+    </button>
+    <div class="nav-section">Activity</div>
+    <button class="nav-item" data-page="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </button>
+    <button class="nav-item" data-page="followups">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Follow-Ups
+      <span class="nav-badge" id="followup-badge" style="display:none">0</span>
+    </button>
+    <button class="nav-item" data-page="reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </button>
+    <div class="nav-section">Tools</div>
+    <button class="nav-item" data-page="backup">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 15 21 21 3 21 3 15"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Backup & Restore
+    </button>
+    <button class="nav-item" data-page="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="online-indicator">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Checking…</span>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div id="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="mobile-menu-btn btn-icon" id="mobile-menu-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="page-title" id="topbar-title">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-primary btn-sm" onclick="navigate('add-record')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Record
+      </button>
+      <button class="btn-icon" id="theme-toggle" title="Toggle theme">
+        <svg id="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg id="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <h1>Good <span id="greeting-time"></span> 👋</h1>
+          <p id="dash-date"></p>
+        </div>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Customers</div><div class="stat-value" id="stat-total">0</div><div class="stat-sub">All time</div></div>
+        <div class="stat-card green"><div class="stat-label">Today</div><div class="stat-value" id="stat-today">0</div><div class="stat-sub">interactions today</div></div>
+        <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value" id="stat-week">0</div><div class="stat-sub">Sun – Sat</div></div>
+        <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value" id="stat-month">0</div><div class="stat-sub" id="stat-month-label"></div></div>
+        <div class="stat-card"><div class="stat-label">Wireless</div><div class="stat-value" id="stat-wireless">0</div><div class="stat-sub">interactions</div></div>
+        <div class="stat-card"><div class="stat-label">Wireline</div><div class="stat-value" id="stat-wireline">0</div><div class="stat-sub">interactions</div></div>
+        <div class="stat-card amber"><div class="stat-label">Pending Follow-Ups</div><div class="stat-value" id="stat-pending">0</div><div class="stat-sub">need attention</div></div>
+        <div class="stat-card green"><div class="stat-label">Completed Follow-Ups</div><div class="stat-value" id="stat-completed-fu">0</div><div class="stat-sub">done</div></div>
+        <div class="stat-card red"><div class="stat-label">Overdue</div><div class="stat-value" id="stat-overdue">0</div><div class="stat-sub">follow-ups</div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="dash-recent">
+          <div class="dash-section-header">
+            <h3>Recent Interactions</h3>
+            <button class="btn btn-ghost btn-sm" onclick="navigate('records')">View all</button>
+          </div>
+          <div id="dash-recent-list"></div>
+        </div>
+        <div>
+          <div class="dash-recent" style="margin-bottom:18px">
+            <div class="dash-section-header">
+              <h3>Upcoming Follow-Ups</h3>
+              <button class="btn btn-ghost btn-sm" onclick="navigate('followups')">View all</button>
+            </div>
+            <div id="dash-followup-list"></div>
+          </div>
+          <div class="dash-recent">
+            <div class="dash-section-header">
+              <h3>⚠ Overdue Follow-Ups</h3>
+            </div>
+            <div id="dash-overdue-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="disclaimer" style="margin-top:20px">
+        <strong>⚠ Privacy & Usage Notice</strong>
+        This is an independent personal tracking tool, not an official SaskTel CRM or authorized customer database. Follow applicable SaskTel privacy, customer-information handling, security, and record-retention policies. Only retain information you are explicitly authorized to store. Data is stored locally in your browser's IndexedDB and is <strong>not encrypted</strong>.
+      </div>
+    </div>
+
+    <!-- ===== ADD RECORD ===== -->
+    <div class="page" id="page-add-record">
+      <div class="page-header">
+        <div>
+          <h1 id="form-page-title">Add Customer Record</h1>
+          <p>Log a customer interaction with SaskTel services</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" onclick="clearForm()">Clear Form</button>
+        </div>
+      </div>
+      <form id="customer-form" onsubmit="return false">
+        <input type="hidden" id="edit-id">
+        <!-- BASIC INFO -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Basic Information
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="f-date">Interaction Date *</label>
+              <input type="date" id="f-date" required>
+            </div>
+            <div class="form-group">
+              <label for="f-day">Day of Week</label>
+              <input type="text" id="f-day" readonly placeholder="Auto-calculated" style="background:var(--grey-100);cursor:default">
+            </div>
+            <div class="form-group">
+              <label for="f-time">Interaction Time</label>
+              <input type="time" id="f-time">
+            </div>
+            <div class="form-group">
+              <label for="f-name">Customer Name (optional)</label>
+              <input type="text" id="f-name" placeholder="e.g. John Smith">
+            </div>
+            <div class="form-group">
+              <label for="f-account">Account Number</label>
+              <input type="text" id="f-account" placeholder="e.g. 3061234567">
+            </div>
+            <div class="form-group">
+              <label for="f-phone">Contact Phone</label>
+              <input type="tel" id="f-phone" placeholder="e.g. 306-555-0100">
+            </div>
+            <div class="form-group">
+              <label for="f-type">Interaction Type *</label>
+              <select id="f-type" required onchange="updateConditionals()">
+                <option value="">Select type…</option>
+                <option value="Wireless">Wireless</option>
+                <option value="Wireline">Wireline</option>
+                <option value="Both">Both</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="f-channel">Interaction Channel</label>
+              <select id="f-channel">
+                <option value="In-person">In-person</option>
+                <option value="Phone">Phone</option>
+                <option value="Email">Email</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIRELESS SERVICES -->
+        <div class="form-section conditional" id="section-wireless">
+          <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6s2-2 11-2 11 2 11 2"/><path d="M5 10s2-2 7-2 7 2 7 2"/><path d="M9 14s1-1 3-1 3 1 3 1"/><circle cx="12" cy="18" r="1" fill="currentColor"/></svg>
+            Wireless Services
+          </div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Services Provided (select all that apply)</label>
+              <div class="checkbox-group" id="wireless-services">
+                <label class="checkbox-item"><input type="checkbox" value="New wireless activation"> New activation</label>
+                <label class="checkbox-item"><input type="checkbox" value="Upgrade"> Upgrade</label>
+                <label class="checkbox-item"><input type="checkbox" value="Device purchase"> Device purchase</label>
+                <label class="checkbox-item"><input type="checkbox" value="Device financing"> Device financing</label>
+                <label class="checkbox-item"><input type="checkbox" value="BYOD"> BYOD</label>
+                <label class="checkbox-item"><input type="checkbox" value="Plan change"> Plan change</label>
+                <label class="checkbox-item"><input type="checkbox" value="Add-on feature"> Add-on feature</label>
+                <label class="checkbox-item"><input type="checkbox" value="Data feature"> Data feature</label>
+                <label class="checkbox-item"><input type="checkbox" value="Roaming"> Roaming</label>
+                <label class="checkbox-item"><input type="checkbox" value="SIM/eSIM"> SIM/eSIM</label>
+                <label class="checkbox-item"><input type="checkbox" value="Port-in"> Port-in</label>
+                <label class="checkbox-item"><input type="checkbox" value="Port-out"> Port-out</label>
+                <label class="checkbox-item"><input type="checkbox" value="Cancellation"> Cancellation</label>
+                <label class="checkbox-item"><input type="checkbox" value="Troubleshooting"> Troubleshooting</label>
+                <label class="checkbox-item"><input type="checkbox" value="Billing inquiry"> Billing inquiry</label>
+                <label class="checkbox-item"><input type="checkbox" value="Other"> Other</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WIRELINE SERVICES -->
+        <div class="form-section conditional" id="section-wireline">
+          <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Wireline Services
+          </div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Services Provided (select all that apply)</label>
+              <div class="checkbox-group" id="wireline-services">
+                <label class="checkbox-item"><input type="checkbox" value="Internet"> Internet</label>
+                <label class="checkbox-item"><input type="checkbox" value="Fibre"> Fibre</label>
+                <label class="checkbox-item"><input type="checkbox" value="TV"> TV</label>
+                <label class="checkbox-item"><input type="checkbox" value="Home Phone"> Home Phone</label>
+                <label class="checkbox-item"><input type="checkbox" value="New connection"> New connection</label>
+                <label class="checkbox-item"><input type="checkbox" value="Plan upgrade"> Plan upgrade</label>
+                <label class="checkbox-item"><input type="checkbox" value="Plan downgrade"> Plan downgrade</label>
+                <label class="checkbox-item"><input type="checkbox" value="Equipment"> Equipment</label>
+                <label class="checkbox-item"><input type="checkbox" value="Installation"> Installation</label>
+                <label class="checkbox-item"><input type="checkbox" value="Technical troubleshooting"> Tech troubleshooting</label>
+                <label class="checkbox-item"><input type="checkbox" value="Billing inquiry"> Billing inquiry</label>
+                <label class="checkbox-item"><input type="checkbox" value="Cancellation"> Cancellation</label>
+                <label class="checkbox-item"><input type="checkbox" value="Other"> Other</label>
+              </div>
+            </div>
+            <div class="form-group full">
+              <label for="f-custom-services">Custom Service Entry</label>
+              <input type="text" id="f-custom-services" placeholder="Enter additional service details…">
+            </div>
+          </div>
+        </div>
+
+        <!-- INTERACTION DETAILS -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Interaction Details
+          </div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label for="f-reason">Reason for Visit / Call</label>
+              <input type="text" id="f-reason" placeholder="Brief reason the customer contacted SaskTel…">
+            </div>
+            <div class="form-group full">
+              <label for="f-request">Customer Request or Issue</label>
+              <textarea id="f-request" rows="3" placeholder="What was the customer requesting or experiencing?"></textarea>
+            </div>
+            <div class="form-group full">
+              <label for="f-notes">Detailed Notes</label>
+              <textarea id="f-notes" rows="5" placeholder="Full notes describing work completed, discussions, recommendations…"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="f-action">Action Taken</label>
+              <input type="text" id="f-action" placeholder="e.g. Activated new line, Swapped SIM…">
+            </div>
+            <div class="form-group">
+              <label for="f-product">Product / Service Discussed</label>
+              <input type="text" id="f-product" placeholder="e.g. iPhone 15, Prestige Internet…">
+            </div>
+            <div class="form-group">
+              <label for="f-outcome">Outcome</label>
+              <input type="text" id="f-outcome" placeholder="e.g. Resolved, Customer satisfied…">
+            </div>
+            <div class="form-group">
+              <label for="f-resolved">Issue Resolved</label>
+              <select id="f-resolved">
+                <option value="">— Select —</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Partially">Partially</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="f-sale">Sale Completed</label>
+              <select id="f-sale">
+                <option value="">— Select —</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label for="f-comments">Additional Comments</label>
+              <textarea id="f-comments" rows="2" placeholder="Any other notes…"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOLLOW-UP -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Follow-Up Management
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="f-followup-req">Follow-Up Required</label>
+              <select id="f-followup-req" onchange="toggleFollowupFields()">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+            <div class="form-group conditional" id="fu-reason-group">
+              <label for="f-fu-reason">Follow-Up Reason</label>
+              <input type="text" id="f-fu-reason" placeholder="Why is follow-up needed?">
+            </div>
+            <div class="form-group conditional" id="fu-date-group">
+              <label for="f-fu-date">Follow-Up Due Date</label>
+              <input type="date" id="f-fu-date">
+            </div>
+            <div class="form-group conditional" id="fu-priority-group">
+              <label for="f-fu-priority">Priority</label>
+              <select id="f-fu-priority">
+                <option value="Normal">Normal</option>
+                <option value="High">High</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+            <div class="form-group conditional" id="fu-status-group">
+              <label for="f-fu-status">Status</label>
+              <select id="f-fu-status">
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Unable to Reach">Unable to Reach</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div class="form-group conditional full" id="fu-notes-group">
+              <label for="f-fu-notes">Follow-Up Notes</label>
+              <textarea id="f-fu-notes" rows="2" placeholder="Notes about the follow-up…"></textarea>
+            </div>
+            <div class="form-group conditional" id="fu-complete-group">
+              <label for="f-fu-complete-date">Date Completed</label>
+              <input type="date" id="f-fu-complete-date">
+            </div>
+          </div>
+        </div>
+
+        <!-- ADDITIONAL FIELDS -->
+        <div class="form-section">
+          <div class="form-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Additional Fields
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="f-escalated">Escalated</label>
+              <select id="f-escalated" onchange="toggleEscalation()">
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+            <div class="form-group conditional" id="esc-details-group">
+              <label for="f-esc-details">Escalation Details</label>
+              <input type="text" id="f-esc-details" placeholder="Who was it escalated to?">
+            </div>
+            <div class="form-group">
+              <label for="f-appt-date">Related Appointment / Install Date</label>
+              <input type="date" id="f-appt-date">
+            </div>
+            <div class="form-group">
+              <label for="f-ref">Internal Reference Number</label>
+              <input type="text" id="f-ref" placeholder="e.g. Ticket #, WO #…">
+            </div>
+            <div class="form-group full">
+              <label for="f-tags">Tags / Custom Labels</label>
+              <input type="text" id="f-tags" placeholder="Comma-separated: vip, complaint, referral…">
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:8px;padding-top:20px;border-top:1px solid var(--border);flex-wrap:wrap">
+          <button type="button" class="btn btn-primary" onclick="saveRecord()" id="save-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Record
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear Form</button>
+          <button type="button" class="btn btn-ghost" onclick="navigate('records')">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ===== ALL RECORDS ===== -->
+    <div class="page" id="page-records">
+      <div class="page-header">
+        <div>
+          <h1>All Records</h1>
+          <p id="records-count-label">Loading…</p>
+        </div>
+        <button class="btn btn-primary" onclick="navigate('add-record')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Record
+        </button>
+      </div>
+      <div class="filter-bar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="records-search" placeholder="Search name, account, phone, notes…" oninput="filterRecords()">
+        </div>
+        <input type="date" id="filter-from" onchange="filterRecords()" title="From date">
+        <input type="date" id="filter-to" onchange="filterRecords()" title="To date">
+        <select id="filter-type" onchange="filterRecords()">
+          <option value="">All types</option>
+          <option value="Wireless">Wireless</option>
+          <option value="Wireline">Wireline</option>
+          <option value="Both">Both</option>
+          <option value="Other">Other</option>
+        </select>
+        <select id="filter-followup" onchange="filterRecords()">
+          <option value="">All follow-ups</option>
+          <option value="Yes">Follow-up needed</option>
+          <option value="No">No follow-up</option>
+          <option value="Pending">Pending</option>
+          <option value="Completed">Completed</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+        <select id="filter-sort" onchange="filterRecords()">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear filters</button>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Customer</th>
+              <th>Account #</th>
+              <th>Type</th>
+              <th>Channel</th>
+              <th>Services</th>
+              <th>Sale</th>
+              <th>Follow-Up</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="records-tbody"></tbody>
+        </table>
+      </div>
+      <div id="records-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;font-size:.82rem;color:var(--text-muted)"></div>
+    </div>
+
+    <!-- ===== CALENDAR ===== -->
+    <div class="page" id="page-calendar">
+      <div class="page-header"><div><h1>Calendar</h1><p>Monthly overview of customer interactions</p></div></div>
+      <div class="calendar-nav">
+        <button class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">&#8592; Previous</button>
+        <h3 id="cal-month-label"></h3>
+        <button class="btn btn-secondary btn-sm" onclick="changeMonth(1)">Next &#8594;</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div id="cal-day-detail" class="cal-day-detail" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h3 id="cal-day-detail-title" style="font-size:1rem;font-weight:700"></h3>
+          <button class="close-btn" onclick="document.getElementById('cal-day-detail').style.display='none'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div id="cal-day-records"></div>
+      </div>
+    </div>
+
+    <!-- ===== FOLLOW-UPS ===== -->
+    <div class="page" id="page-followups">
+      <div class="page-header"><div><h1>Follow-Up Centre</h1><p>Manage all pending and completed customer follow-ups</p></div></div>
+      <div id="followup-overdue"></div>
+      <div id="followup-today"></div>
+      <div id="followup-tomorrow"></div>
+      <div id="followup-upcoming"></div>
+      <div id="followup-completed"></div>
+    </div>
+
+    <!-- ===== REPORTS ===== -->
+    <div class="page" id="page-reports">
+      <div class="page-header">
+        <div><h1>Reports & Analytics</h1><p>Sales activity summary and trends</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input type="date" id="rpt-from" onchange="renderReports()" style="max-width:160px">
+          <input type="date" id="rpt-to" onchange="renderReports()" style="max-width:160px">
+          <button class="btn btn-secondary btn-sm" onclick="clearReportFilter()">All time</button>
+          <button class="btn btn-primary btn-sm" onclick="exportCSV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="stats-grid" id="rpt-stats"></div>
+
+      <div class="report-grid">
+        <!-- Type breakdown -->
+        <div class="card">
+          <div class="card-title">Interaction Type Breakdown</div>
+          <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div class="donut-chart" id="donut-type">
+              <svg class="donut-svg" width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--grey-200)" stroke-width="14"/>
+                <circle id="donut-wireless-arc" cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="14" stroke-dasharray="0 314"/>
+                <circle id="donut-wireline-arc" cx="60" cy="60" r="50" fill="none" stroke="var(--green)" stroke-width="14" stroke-dasharray="0 314" stroke-dashoffset="0"/>
+              </svg>
+              <div class="donut-label"><span id="donut-total">0</span><span class="donut-sub">total</span></div>
+            </div>
+            <div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div> <span id="legend-wireless">Wireless: 0</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> <span id="legend-wireline">Wireline: 0</span></div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--grey-300)"></div> <span id="legend-other">Other / Both: 0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resolved -->
+        <div class="card">
+          <div class="card-title">Resolution Status</div>
+          <div id="rpt-resolved-chart"></div>
+        </div>
+
+        <!-- Follow-up completion -->
+        <div class="card">
+          <div class="card-title">Follow-Up Completion Rate</div>
+          <div id="rpt-followup-chart"></div>
+        </div>
+
+        <!-- Sales -->
+        <div class="card">
+          <div class="card-title">Sale Completed</div>
+          <div id="rpt-sales-chart"></div>
+        </div>
+      </div>
+
+      <!-- Services breakdown -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Most Frequently Provided Services</div>
+        <div id="rpt-services-chart"></div>
+      </div>
+
+      <!-- Daily trend -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Daily Activity (Last 30 Days)</div>
+        <div id="rpt-daily-chart" style="overflow-x:auto"></div>
+      </div>
+
+      <!-- Monthly breakdown -->
+      <div class="card">
+        <div class="card-title">Monthly Summary</div>
+        <div id="rpt-monthly-chart"></div>
+      </div>
+    </div>
+
+    <!-- ===== BACKUP & RESTORE ===== -->
+    <div class="page" id="page-backup">
+      <div class="page-header"><div><h1>Backup & Restore</h1><p>Protect your data with regular exports</p></div></div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:24px">
+        <div class="card">
+          <div class="card-title">Export to JSON</div>
+          <p style="font-size:.84rem;color:var(--text-muted);margin-bottom:14px">Export all records as a JSON backup file. Use this to transfer data or keep a full backup.</p>
+          <div id="backup-info" style="font-size:.82rem;color:var(--text-muted);margin-bottom:14px"></div>
+          <button class="btn btn-primary" onclick="exportJSON()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download JSON Backup
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-title">Export to CSV</div>
+          <p style="font-size:.84rem;color:var(--text-muted);margin-bottom:14px">Export all records as a CSV spreadsheet. Compatible with Excel, Google Sheets, and other tools.</p>
+          <button class="btn btn-success" onclick="exportCSV()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Download CSV
+          </button>
+        </div>
+        <div class="card">
+          <div class="card-title">Import JSON</div>
+          <p style="font-size:.84rem;color:var(--text-muted);margin-bottom:14px">Restore from a previous JSON backup. Duplicate IDs will be skipped by default.</p>
+          <div id="import-drop" class="backup-zone" onclick="document.getElementById('import-file').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <strong style="font-size:.875rem;color:var(--text)">Drop JSON file here or click to browse</strong>
+            <p>Accepted: .json backup files</p>
+          </div>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(this)">
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <strong>⚠ Data Safety Reminder</strong>
+        IndexedDB data is stored locally in your browser and is <strong>not encrypted</strong>. It is device-specific and may be cleared if you clear browser data or use private/incognito mode. Export a JSON backup regularly to prevent data loss. Never store passwords, payment card details, or authentication credentials.
+      </div>
+
+      <div class="card">
+        <div class="card-title">Danger Zone</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:.875rem;font-weight:600;color:var(--text)">Clear All Records</div>
+            <div style="font-size:.78rem;color:var(--text-muted)">Permanently deletes all customer records. Cannot be undone.</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="clearAllRecords()">Clear All Records</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SETTINGS ===== -->
+    <div class="page" id="page-settings">
+      <div class="page-header"><div><h1>Settings</h1><p>Application preferences and privacy controls</p></div></div>
+
+      <div class="settings-section">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Dark Mode</div>
+            <div class="settings-desc">Switch between light and dark themes</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="setting-dark" onchange="applyTheme()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Rep Name</div>
+            <div class="settings-desc">Your name shown in exports and reports</div>
+          </div>
+          <input type="text" id="setting-rep-name" placeholder="Your name…" style="max-width:220px" onchange="saveSetting('repName',this.value)">
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Location / Store</div>
+            <div class="settings-desc">Included in CSV exports</div>
+          </div>
+          <input type="text" id="setting-location" placeholder="e.g. SaskTel Regina South" style="max-width:220px" onchange="saveSetting('location',this.value)">
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Records Per Page</div>
+            <div class="settings-desc">Number of records shown per page in All Records</div>
+          </div>
+          <select id="setting-per-page" style="max-width:120px" onchange="saveSetting('perPage',this.value);filterRecords()">
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Auto-fill Date & Time</div>
+            <div class="settings-desc">Pre-fill today's date and current time when adding records</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="setting-autofill" checked onchange="saveSetting('autofill',this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Data Storage</div>
+            <div class="settings-desc">Storage type: IndexedDB (browser-local, not encrypted, device-specific)</div>
+          </div>
+          <span class="badge badge-blue">IndexedDB</span>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">External Transmissions</div>
+            <div class="settings-desc">This app never sends data to any server or third party</div>
+          </div>
+          <span class="badge badge-green">None – Offline Only</span>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Total Records Stored</div>
+            <div class="settings-desc">All customer records in IndexedDB</div>
+          </div>
+          <span id="settings-record-count" class="badge badge-grey">0 records</span>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <strong>⚠ Compliance Notice</strong>
+        This is an independent personal tracking tool, not an official SaskTel CRM or authorized customer database. Follow applicable SaskTel privacy, customer-information handling, security, and record-retention policies. Only retain information you are explicitly authorized to store. All data is stored locally in IndexedDB and is <strong>not inherently encrypted</strong>.
+      </div>
+    </div>
+
+  </div><!-- #content -->
+</div><!-- #main -->
+
+<!-- MOBILE NAVIGATION -->
+<nav id="mobile-nav">
+  <div class="mobile-nav-inner">
+    <button class="mob-nav-item active" data-page="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dash
+    </button>
+    <button class="mob-nav-item" data-page="add-record">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      Add
+    </button>
+    <button class="mob-nav-item" data-page="records">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Records
+    </button>
+    <button class="mob-nav-item mob-nav-badge" data-page="followups" id="mob-followup-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Follow-Up
+    </button>
+    <button class="mob-nav-item" data-page="reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </button>
+  </div>
+</nav>
+
+<!-- RECORD DETAIL MODAL -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h3 id="modal-detail-title">Customer Record</h3>
+      <button class="close-btn" onclick="closeModal('modal-detail')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="modal-detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-detail')">Close</button>
+      <button class="btn btn-ghost" id="modal-edit-btn">Edit Record</button>
+      <button class="btn btn-danger" id="modal-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="confirm-title">Confirm Action</h3>
+      <button class="close-btn" onclick="closeModal('modal-confirm')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body"><p id="confirm-message"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-confirm')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT PREVIEW MODAL -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Import Preview</h3>
+      <button class="close-btn" onclick="closeModal('modal-import')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body" id="import-preview-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-import')">Cancel</button>
+      <button class="btn btn-primary" id="import-confirm-btn">Import Records</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// =====================================================================
+// SALESTRACK – SaskTel Sales Rep Activity Tracker
+// All data stored locally in IndexedDB. No external transmissions.
+// =====================================================================
+
+'use strict';
+
+// ===== DB =====
+const DB_NAME = 'SalesTrackDB';
+const DB_VERSION = 1;
+const STORE = 'customers';
+let db = null;
+let allRecords = []; // in-memory cache
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        const store = d.createObjectStore(STORE, { keyPath: 'id' });
+        store.createIndex('date', 'date', { unique: false });
+        store.createIndex('account', 'account', { unique: false });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+function dbAdd(record) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).add(record);
+    tx.oncomplete = resolve;
+    tx.onerror = e => reject(e.target.error);
+  });
+}
+function dbPut(record) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).put(record);
+    tx.oncomplete = resolve;
+    tx.onerror = e => reject(e.target.error);
+  });
+}
+function dbDelete(id) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = e => reject(e.target.error);
+  });
+}
+function dbGetAll() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = e => reject(e.target.error);
+  });
+}
+function dbClear() {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    tx.objectStore(STORE).clear();
+    tx.oncomplete = resolve;
+    tx.onerror = e => reject(e.target.error);
+  });
+}
+
+// ===== SETTINGS =====
+const SETTINGS_KEY = 'salestrack_settings';
+let settings = {};
+function loadSettings() {
+  try { settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); } catch(e) { settings = {}; }
+  // Apply settings to UI
+  if (settings.dark) { document.documentElement.setAttribute('data-theme','dark'); document.getElementById('setting-dark').checked = true; swapThemeIcons(true); }
+  if (settings.repName) document.getElementById('setting-rep-name').value = settings.repName;
+  if (settings.location) document.getElementById('setting-location').value = settings.location;
+  if (settings.perPage) document.getElementById('setting-per-page').value = settings.perPage;
+  if (settings.autofill === false) document.getElementById('setting-autofill').checked = false;
+}
+function saveSetting(key, value) {
+  settings[key] = value;
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e) {}
+}
+function applyTheme() {
+  const isDark = document.getElementById('setting-dark').checked;
+  if (isDark) document.documentElement.setAttribute('data-theme','dark');
+  else document.documentElement.removeAttribute('data-theme');
+  swapThemeIcons(isDark);
+  saveSetting('dark', isDark);
+}
+function swapThemeIcons(isDark) {
+  document.getElementById('theme-icon-light').style.display = isDark ? 'none' : '';
+  document.getElementById('theme-icon-dark').style.display = isDark ? '' : 'none';
+}
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const isDark = !document.documentElement.hasAttribute('data-theme');
+  document.getElementById('setting-dark').checked = isDark;
+  applyTheme();
+});
+
+// ===== NAVIGATION =====
+const PAGE_TITLES = {
+  'dashboard':'Dashboard','add-record':'Add Record','records':'All Records',
+  'calendar':'Calendar','followups':'Follow-Up Centre','reports':'Reports & Analytics',
+  'backup':'Backup & Restore','settings':'Settings'
+};
+let currentPage = 'dashboard';
+let currentCalYear, currentCalMonth;
+let recordsPage = 0;
+let filteredRecords = [];
+
+function navigate(page, opts = {}) {
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  // Nav items
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  document.querySelectorAll('.mob-nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
+  currentPage = page;
+  // Close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+  // Page-specific inits
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'records') { recordsPage = 0; filterRecords(); }
+  if (page === 'calendar') renderCalendar();
+  if (page === 'followups') renderFollowUps();
+  if (page === 'reports') renderReports();
+  if (page === 'backup') renderBackupInfo();
+  if (page === 'settings') document.getElementById('settings-record-count').textContent = allRecords.length + ' records';
+  if (page === 'add-record') {
+    if (!opts.editId) {
+      clearForm();
+      document.getElementById('form-page-title').textContent = 'Add Customer Record';
+      document.getElementById('save-btn').textContent = '';
+      document.getElementById('save-btn').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Record';
+    }
+  }
+}
+
+document.querySelectorAll('[data-page]').forEach(btn => {
+  btn.addEventListener('click', () => navigate(btn.dataset.page));
+});
+document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+document.addEventListener('click', e => {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== document.getElementById('mobile-menu-btn')) {
+    sidebar.classList.remove('open');
+  }
+});
+
+// ===== ONLINE STATUS =====
+function updateStatus() {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-text');
+  const online = navigator.onLine;
+  dot.className = 'status-dot ' + (online ? 'online' : 'offline');
+  txt.textContent = online ? 'Online' : 'Offline – local mode';
+}
+window.addEventListener('online', updateStatus);
+window.addEventListener('offline', updateStatus);
+updateStatus();
+
+// ===== HELPERS =====
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function uid() {
+  return 'rec_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8);
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+function now() {
+  const d = new Date();
+  return d.toTimeString().slice(0,5);
+}
+function dayName(dateStr) {
+  if (!dateStr) return '';
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const d = new Date(dateStr + 'T00:00:00');
+  return days[d.getDay()];
+}
+function fmtDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y,m,d] = dateStr.split('-');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return months[parseInt(m)-1] + ' ' + parseInt(d) + ', ' + y;
+}
+function fmtDateTime(dateStr, timeStr) {
+  return fmtDate(dateStr) + (timeStr ? ' at ' + timeStr : '');
+}
+function startOfWeek(d) {
+  const date = new Date(d); date.setHours(0,0,0,0);
+  const day = date.getDay();
+  date.setDate(date.getDate() - day);
+  return date.toISOString().split('T')[0];
+}
+function endOfWeek(d) {
+  const date = new Date(d); date.setHours(0,0,0,0);
+  const day = date.getDay();
+  date.setDate(date.getDate() + (6 - day));
+  return date.toISOString().split('T')[0];
+}
+function isOverdue(r) {
+  if (r.followupRequired !== 'Yes') return false;
+  if (r.followupStatus === 'Completed' || r.followupStatus === 'Cancelled') return false;
+  if (!r.followupDue) return false;
+  return r.followupDue < today();
+}
+function isPriority(p) {
+  if (p === 'High') return 'priority-high';
+  if (p === 'Low') return 'priority-low';
+  return 'priority-normal';
+}
+function getServices(r) {
+  const svcs = [];
+  if (r.wirelessServices && r.wirelessServices.length) svcs.push(...r.wirelessServices);
+  if (r.wirelineServices && r.wirelineServices.length) svcs.push(...r.wirelineServices);
+  if (r.customServices) svcs.push(r.customServices);
+  return svcs.filter(Boolean);
+}
+function typeBadge(type) {
+  if (!type) return '';
+  const cls = type === 'Wireless' ? 'badge-blue' : type === 'Wireline' ? 'badge-green' : 'badge-amber';
+  return `<span class="badge ${cls}">${esc(type)}</span>`;
+}
+function followupBadge(r) {
+  if (r.followupRequired !== 'Yes') return '<span class="badge badge-grey">None</span>';
+  if (isOverdue(r)) return '<span class="badge badge-red">Overdue</span>';
+  const st = r.followupStatus || 'Pending';
+  if (st === 'Completed') return '<span class="badge badge-green">Completed</span>';
+  if (st === 'Cancelled') return '<span class="badge badge-grey">Cancelled</span>';
+  if (st === 'Unable to Reach') return '<span class="badge badge-amber">Unable to Reach</span>';
+  return '<span class="badge badge-amber">Pending</span>';
+}
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+// ===== TOAST =====
+function toast(msg, type = 'info') {
+  const icons = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+  };
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = (icons[type] || icons.info) + esc(msg);
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(12px)'; el.style.transition = '.3s'; setTimeout(() => el.remove(), 300); }, 3500);
+}
+
+// ===== MODAL HELPERS =====
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function confirm(title, msg, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-message').textContent = msg;
+  const btn = document.getElementById('confirm-ok-btn');
+  btn.onclick = () => { closeModal('modal-confirm'); cb(); };
+  document.getElementById('modal-confirm').classList.add('open');
+}
+
+// ===== FORM =====
+function clearForm() {
+  document.getElementById('edit-id').value = '';
+  const autoFill = document.getElementById('setting-autofill').checked;
+  document.getElementById('f-date').value = autoFill ? today() : '';
+  document.getElementById('f-day').value = autoFill ? dayName(today()) : '';
+  document.getElementById('f-time').value = autoFill ? now() : '';
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-account').value = '';
+  document.getElementById('f-phone').value = '';
+  document.getElementById('f-type').value = '';
+  document.getElementById('f-channel').value = 'In-person';
+  document.querySelectorAll('#wireless-services input, #wireline-services input').forEach(cb => { cb.checked = false; cb.closest('.checkbox-item').classList.remove('checked'); });
+  document.getElementById('f-custom-services').value = '';
+  document.getElementById('f-reason').value = '';
+  document.getElementById('f-request').value = '';
+  document.getElementById('f-notes').value = '';
+  document.getElementById('f-action').value = '';
+  document.getElementById('f-product').value = '';
+  document.getElementById('f-outcome').value = '';
+  document.getElementById('f-resolved').value = '';
+  document.getElementById('f-sale').value = '';
+  document.getElementById('f-comments').value = '';
+  document.getElementById('f-followup-req').value = 'No';
+  document.getElementById('f-fu-reason').value = '';
+  document.getElementById('f-fu-date').value = '';
+  document.getElementById('f-fu-priority').value = 'Normal';
+  document.getElementById('f-fu-status').value = 'Pending';
+  document.getElementById('f-fu-notes').value = '';
+  document.getElementById('f-fu-complete-date').value = '';
+  document.getElementById('f-escalated').value = 'No';
+  document.getElementById('f-esc-details').value = '';
+  document.getElementById('f-appt-date').value = '';
+  document.getElementById('f-ref').value = '';
+  document.getElementById('f-tags').value = '';
+  updateConditionals();
+  toggleFollowupFields();
+  toggleEscalation();
+}
+
+document.getElementById('f-date').addEventListener('input', function() {
+  document.getElementById('f-day').value = dayName(this.value);
+});
+
+function updateConditionals() {
+  const type = document.getElementById('f-type').value;
+  const showW = type === 'Wireless' || type === 'Both';
+  const showL = type === 'Wireline' || type === 'Both';
+  document.getElementById('section-wireless').classList.toggle('visible', showW);
+  document.getElementById('section-wireline').classList.toggle('visible', showL);
+}
+
+function toggleFollowupFields() {
+  const req = document.getElementById('f-followup-req').value === 'Yes';
+  ['fu-reason-group','fu-date-group','fu-priority-group','fu-status-group','fu-notes-group','fu-complete-group'].forEach(id => {
+    document.getElementById(id).classList.toggle('visible', req);
+  });
+}
+
+function toggleEscalation() {
+  const esc = document.getElementById('f-escalated').value === 'Yes';
+  document.getElementById('esc-details-group').classList.toggle('visible', esc);
+}
+
+document.querySelectorAll('.checkbox-item input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', function() {
+    this.closest('.checkbox-item').classList.toggle('checked', this.checked);
+  });
+});
+
+function getChecked(containerId) {
+  return [...document.querySelectorAll('#' + containerId + ' input[type="checkbox"]:checked')].map(c => c.value);
+}
+
+function saveRecord() {
+  const date = document.getElementById('f-date').value;
+  const type = document.getElementById('f-type').value;
+  if (!date) { toast('Please enter an interaction date.', 'warning'); document.getElementById('f-date').focus(); return; }
+  if (!type) { toast('Please select an interaction type.', 'warning'); document.getElementById('f-type').focus(); return; }
+
+  const editId = document.getElementById('edit-id').value;
+  const record = {
+    id: editId || uid(),
+    date, time: document.getElementById('f-time').value,
+    dayOfWeek: dayName(date),
+    customerName: document.getElementById('f-name').value.trim(),
+    account: document.getElementById('f-account').value.trim(),
+    phone: document.getElementById('f-phone').value.trim(),
+    interactionType: type,
+    channel: document.getElementById('f-channel').value,
+    wirelessServices: getChecked('wireless-services'),
+    wirelineServices: getChecked('wireline-services'),
+    customServices: document.getElementById('f-custom-services').value.trim(),
+    reason: document.getElementById('f-reason').value.trim(),
+    customerRequest: document.getElementById('f-request').value.trim(),
+    notes: document.getElementById('f-notes').value.trim(),
+    actionTaken: document.getElementById('f-action').value.trim(),
+    productDiscussed: document.getElementById('f-product').value.trim(),
+    outcome: document.getElementById('f-outcome').value.trim(),
+    issueResolved: document.getElementById('f-resolved').value,
+    saleCompleted: document.getElementById('f-sale').value,
+    additionalComments: document.getElementById('f-comments').value.trim(),
+    followupRequired: document.getElementById('f-followup-req').value,
+    followupReason: document.getElementById('f-fu-reason').value.trim(),
+    followupDue: document.getElementById('f-fu-date').value,
+    followupPriority: document.getElementById('f-fu-priority').value,
+    followupStatus: document.getElementById('f-fu-status').value,
+    followupNotes: document.getElementById('f-fu-notes').value.trim(),
+    followupCompleted: document.getElementById('f-fu-complete-date').value,
+    escalated: document.getElementById('f-escalated').value,
+    escalationDetails: document.getElementById('f-esc-details').value.trim(),
+    appointmentDate: document.getElementById('f-appt-date').value,
+    refNumber: document.getElementById('f-ref').value.trim(),
+    tags: document.getElementById('f-tags').value.trim(),
+    createdAt: editId ? (allRecords.find(r=>r.id===editId)||{}).createdAt || Date.now() : Date.now(),
+    updatedAt: Date.now()
+  };
+
+  const save = editId ? dbPut(record) : dbAdd(record);
+  save.then(() => {
+    // Update in-memory
+    if (editId) {
+      const idx = allRecords.findIndex(r => r.id === editId);
+      if (idx > -1) allRecords[idx] = record; else allRecords.push(record);
+    } else {
+      allRecords.unshift(record);
+    }
+    allRecords.sort((a,b) => b.date.localeCompare(a.date) || (b.time||'').localeCompare(a.time||''));
+    updateBadge();
+    toast(editId ? 'Record updated successfully.' : 'Record saved successfully.', 'success');
+    clearForm();
+    navigate('records');
+  }).catch(err => {
+    toast('Error saving record: ' + err.message, 'error');
+  });
+}
+
+// ===== RECORDS PAGE =====
+let currentFilteredRecords = [];
+const PER_PAGE_DEFAULT = 20;
+
+function getPerPage() {
+  return parseInt(document.getElementById('setting-per-page').value) || PER_PAGE_DEFAULT;
+}
+
+function filterRecords() {
+  const q = document.getElementById('records-search').value.toLowerCase();
+  const from = document.getElementById('filter-from').value;
+  const to = document.getElementById('filter-to').value;
+  const type = document.getElementById('filter-type').value;
+  const fu = document.getElementById('filter-followup').value;
+  const sort = document.getElementById('filter-sort').value;
+
+  let records = [...allRecords];
+  if (q) records = records.filter(r =>
+    (r.customerName||'').toLowerCase().includes(q) ||
+    (r.account||'').toLowerCase().includes(q) ||
+    (r.phone||'').toLowerCase().includes(q) ||
+    (r.notes||'').toLowerCase().includes(q) ||
+    (r.customerRequest||'').toLowerCase().includes(q) ||
+    (r.reason||'').toLowerCase().includes(q) ||
+    getServices(r).join(' ').toLowerCase().includes(q) ||
+    (r.tags||'').toLowerCase().includes(q)
+  );
+  if (from) records = records.filter(r => r.date >= from);
+  if (to) records = records.filter(r => r.date <= to);
+  if (type) records = records.filter(r => r.interactionType === type);
+  if (fu === 'Yes') records = records.filter(r => r.followupRequired === 'Yes');
+  if (fu === 'No') records = records.filter(r => r.followupRequired !== 'Yes');
+  if (fu === 'Pending') records = records.filter(r => r.followupRequired === 'Yes' && r.followupStatus === 'Pending' && !isOverdue(r));
+  if (fu === 'Completed') records = records.filter(r => r.followupStatus === 'Completed');
+  if (fu === 'Overdue') records = records.filter(r => isOverdue(r));
+
+  if (sort === 'oldest') records.sort((a,b) => a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||''));
+  else records.sort((a,b) => b.date.localeCompare(a.date) || (b.time||'').localeCompare(a.time||''));
+
+  currentFilteredRecords = records;
+  recordsPage = 0;
+  renderRecordsTable();
+}
+
+function renderRecordsTable() {
+  const tbody = document.getElementById('records-tbody');
+  const perPage = getPerPage();
+  const start = recordsPage * perPage;
+  const slice = currentFilteredRecords.slice(start, start + perPage);
+  const total = currentFilteredRecords.length;
+
+  document.getElementById('records-count-label').textContent = total + ' record' + (total !== 1 ? 's' : '') + ' found';
+
+  if (!slice.length) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <h4>No records found</h4>
+      <p>Try adjusting your search or filters, or add your first record.</p>
+    </div></td></tr>`;
+    document.getElementById('records-pagination').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = slice.map(r => {
+    const svcs = getServices(r);
+    const svcTxt = svcs.slice(0,2).map(s => esc(s)).join(', ') + (svcs.length > 2 ? ` +${svcs.length-2}` : '');
+    return `<tr>
+      <td style="white-space:nowrap">${esc(fmtDate(r.date))}</td>
+      <td style="white-space:nowrap">${esc(r.time||'—')}</td>
+      <td>${esc(r.customerName||'—')}</td>
+      <td><code style="font-size:.82rem;font-family:var(--font-mono)">${esc(r.account||'—')}</code></td>
+      <td>${typeBadge(r.interactionType)}</td>
+      <td>${esc(r.channel||'—')}</td>
+      <td style="max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(svcs.join(', '))}">${svcTxt||'—'}</td>
+      <td>${r.saleCompleted === 'Yes' ? '<span class="badge badge-green">Yes</span>' : r.saleCompleted === 'No' ? '<span class="badge badge-grey">No</span>' : '—'}</td>
+      <td>${followupBadge(r)}</td>
+      <td><div class="td-actions">
+        <button class="btn-icon" title="View" onclick='viewRecord(${JSON.stringify(r.id)})'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button class="btn-icon" title="Edit" onclick='editRecord(${JSON.stringify(r.id)})'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn-icon" title="Delete" style="color:var(--red)" onclick='deleteRecord(${JSON.stringify(r.id)})'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  // Pagination
+  const totalPages = Math.ceil(total / perPage);
+  const pag = document.getElementById('records-pagination');
+  if (totalPages <= 1) { pag.innerHTML = `<span>${total} record${total!==1?'s':''}</span><span></span>`; return; }
+  let pagHtml = `<span>Showing ${start+1}–${Math.min(start+perPage,total)} of ${total}</span><div style="display:flex;gap:6px;align-items:center">`;
+  pagHtml += `<button class="btn btn-secondary btn-xs" ${recordsPage===0?'disabled':''} onclick="recordsPage--;renderRecordsTable()">&#8592; Prev</button>`;
+  pagHtml += `<span style="font-size:.82rem;color:var(--text-muted)">Page ${recordsPage+1} / ${totalPages}</span>`;
+  pagHtml += `<button class="btn btn-secondary btn-xs" ${recordsPage>=totalPages-1?'disabled':''} onclick="recordsPage++;renderRecordsTable()">Next &#8594;</button>`;
+  pagHtml += '</div>';
+  pag.innerHTML = pagHtml;
+}
+
+function clearFilters() {
+  document.getElementById('records-search').value = '';
+  document.getElementById('filter-from').value = '';
+  document.getElementById('filter-to').value = '';
+  document.getElementById('filter-type').value = '';
+  document.getElementById('filter-followup').value = '';
+  document.getElementById('filter-sort').value = 'newest';
+  filterRecords();
+}
+
+// ===== VIEW RECORD =====
+function viewRecord(id) {
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('modal-detail-title').textContent = r.customerName ? `${r.customerName} – ${fmtDate(r.date)}` : `Record – ${fmtDate(r.date)}`;
+  const svcs = getServices(r);
+  document.getElementById('modal-detail-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><div class="detail-key">Date</div><div class="detail-val">${esc(fmtDate(r.date))} (${esc(r.dayOfWeek||'')})</div></div>
+      <div class="detail-item"><div class="detail-key">Time</div><div class="detail-val">${esc(r.time||'—')}</div></div>
+      <div class="detail-item"><div class="detail-key">Customer Name</div><div class="detail-val">${esc(r.customerName||'—')}</div></div>
+      <div class="detail-item"><div class="detail-key">Account #</div><div class="detail-val">${esc(r.account||'—')}</div></div>
+      <div class="detail-item"><div class="detail-key">Phone</div><div class="detail-val">${esc(r.phone||'—')}</div></div>
+      <div class="detail-item"><div class="detail-key">Type</div><div class="detail-val">${typeBadge(r.interactionType)}</div></div>
+      <div class="detail-item"><div class="detail-key">Channel</div><div class="detail-val">${esc(r.channel||'—')}</div></div>
+      <div class="detail-item"><div class="detail-key">Sale Completed</div><div class="detail-val">${r.saleCompleted==='Yes'?'<span class="badge badge-green">Yes</span>':r.saleCompleted==='No'?'<span class="badge badge-grey">No</span>':'—'}</div></div>
+      <div class="detail-item"><div class="detail-key">Issue Resolved</div><div class="detail-val">${esc(r.issueResolved||'—')}</div></div>
+      <div class="detail-item"><div class="detail-key">Escalated</div><div class="detail-val">${esc(r.escalated||'No')}</div></div>
+    </div>
+    ${svcs.length ? `<div style="margin-bottom:14px"><div class="detail-key" style="margin-bottom:6px">Services</div><div style="display:flex;flex-wrap:wrap;gap:6px">${svcs.map(s=>`<span class="badge badge-blue">${esc(s)}</span>`).join('')}</div></div>` : ''}
+    ${r.reason ? `<div class="detail-item" style="margin-bottom:10px"><div class="detail-key">Reason for Visit</div><div class="detail-val">${esc(r.reason)}</div></div>` : ''}
+    ${r.customerRequest ? `<div class="detail-item" style="margin-bottom:10px"><div class="detail-key">Customer Request / Issue</div><div class="detail-val" style="white-space:pre-wrap">${esc(r.customerRequest)}</div></div>` : ''}
+    ${r.notes ? `<div class="detail-item" style="margin-bottom:10px"><div class="detail-key">Detailed Notes</div><div class="detail-val" style="white-space:pre-wrap">${esc(r.notes)}</div></div>` : ''}
+    ${r.actionTaken ? `<div class="detail-item" style="margin-bottom:10px"><div class="detail-key">Action Taken</div><div class="detail-val">${esc(r.actionTaken)}</div></div>` : ''}
+    ${r.outcome ? `<div class="detail-item" style="margin-bottom:10px"><div class="detail-key">Outcome</div><div class="detail-val">${esc(r.outcome)}</div></div>` : ''}
+    ${r.followupRequired === 'Yes' ? `<div style="background:var(--amber-light);border:1px solid rgba(196,122,0,.2);border-radius:var(--radius-sm);padding:14px;margin-top:10px">
+      <div class="detail-key" style="color:var(--amber);margin-bottom:8px">Follow-Up Required</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-key">Due Date</div><div class="detail-val">${esc(fmtDate(r.followupDue))}</div></div>
+        <div class="detail-item"><div class="detail-key">Priority</div><div class="detail-val ${isPriority(r.followupPriority)}">${esc(r.followupPriority||'—')}</div></div>
+        <div class="detail-item"><div class="detail-key">Status</div><div class="detail-val">${followupBadge(r)}</div></div>
+        ${r.followupReason ? `<div class="detail-item"><div class="detail-key">Reason</div><div class="detail-val">${esc(r.followupReason)}</div></div>` : ''}
+      </div>
+      ${r.followupNotes ? `<div class="detail-item" style="margin-top:8px"><div class="detail-key">Follow-Up Notes</div><div class="detail-val">${esc(r.followupNotes)}</div></div>` : ''}
+    </div>` : ''}
+    ${r.tags ? `<div class="detail-item" style="margin-top:12px"><div class="detail-key">Tags</div><div class="detail-val">${r.tags.split(',').map(t=>`<span class="badge badge-grey" style="margin-right:4px">${esc(t.trim())}</span>`).join('')}</div></div>` : ''}
+  `;
+  document.getElementById('modal-edit-btn').onclick = () => { closeModal('modal-detail'); editRecord(id); };
+  document.getElementById('modal-delete-btn').onclick = () => { closeModal('modal-detail'); deleteRecord(id); };
+  document.getElementById('modal-detail').classList.add('open');
+}
+
+// ===== EDIT RECORD =====
+function editRecord(id) {
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  clearForm();
+  document.getElementById('edit-id').value = r.id;
+  document.getElementById('f-date').value = r.date;
+  document.getElementById('f-day').value = r.dayOfWeek || dayName(r.date);
+  document.getElementById('f-time').value = r.time || '';
+  document.getElementById('f-name').value = r.customerName || '';
+  document.getElementById('f-account').value = r.account || '';
+  document.getElementById('f-phone').value = r.phone || '';
+  document.getElementById('f-type').value = r.interactionType || '';
+  document.getElementById('f-channel').value = r.channel || 'In-person';
+  updateConditionals();
+  // Set checkboxes
+  if (r.wirelessServices) r.wirelessServices.forEach(v => {
+    const cb = document.querySelector('#wireless-services input[value="'+v+'"]');
+    if (cb) { cb.checked = true; cb.closest('.checkbox-item').classList.add('checked'); }
+  });
+  if (r.wirelineServices) r.wirelineServices.forEach(v => {
+    const cb = document.querySelector('#wireline-services input[value="'+v+'"]');
+    if (cb) { cb.checked = true; cb.closest('.checkbox-item').classList.add('checked'); }
+  });
+  document.getElementById('f-custom-services').value = r.customServices || '';
+  document.getElementById('f-reason').value = r.reason || '';
+  document.getElementById('f-request').value = r.customerRequest || '';
+  document.getElementById('f-notes').value = r.notes || '';
+  document.getElementById('f-action').value = r.actionTaken || '';
+  document.getElementById('f-product').value = r.productDiscussed || '';
+  document.getElementById('f-outcome').value = r.outcome || '';
+  document.getElementById('f-resolved').value = r.issueResolved || '';
+  document.getElementById('f-sale').value = r.saleCompleted || '';
+  document.getElementById('f-comments').value = r.additionalComments || '';
+  document.getElementById('f-followup-req').value = r.followupRequired || 'No';
+  document.getElementById('f-fu-reason').value = r.followupReason || '';
+  document.getElementById('f-fu-date').value = r.followupDue || '';
+  document.getElementById('f-fu-priority').value = r.followupPriority || 'Normal';
+  document.getElementById('f-fu-status').value = r.followupStatus || 'Pending';
+  document.getElementById('f-fu-notes').value = r.followupNotes || '';
+  document.getElementById('f-fu-complete-date').value = r.followupCompleted || '';
+  document.getElementById('f-escalated').value = r.escalated || 'No';
+  document.getElementById('f-esc-details').value = r.escalationDetails || '';
+  document.getElementById('f-appt-date').value = r.appointmentDate || '';
+  document.getElementById('f-ref').value = r.refNumber || '';
+  document.getElementById('f-tags').value = r.tags || '';
+  toggleFollowupFields();
+  toggleEscalation();
+  document.getElementById('form-page-title').textContent = 'Edit Customer Record';
+  document.getElementById('save-btn').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Update Record';
+  navigate('add-record', { editId: r.id });
+}
+
+// ===== DELETE RECORD =====
+function deleteRecord(id) {
+  const r = allRecords.find(x => x.id === id);
+  const label = r && r.customerName ? r.customerName : (r && r.account ? 'Account ' + r.account : 'this record');
+  confirm('Delete Record', `Are you sure you want to permanently delete the record for ${label}? This cannot be undone.`, async () => {
+    try {
+      await dbDelete(id);
+      allRecords = allRecords.filter(r => r.id !== id);
+      updateBadge();
+      toast('Record deleted.', 'info');
+      if (currentPage === 'records') filterRecords();
+      if (currentPage === 'dashboard') renderDashboard();
+    } catch(e) { toast('Error deleting record: ' + e.message, 'error'); }
+  });
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const t = today();
+  const wStart = startOfWeek(t);
+  const wEnd = endOfWeek(t);
+  const monthStr = t.slice(0,7);
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  document.getElementById('stat-total').textContent = allRecords.length;
+  document.getElementById('stat-today').textContent = allRecords.filter(r => r.date === t).length;
+  document.getElementById('stat-week').textContent = allRecords.filter(r => r.date >= wStart && r.date <= wEnd).length;
+  document.getElementById('stat-month').textContent = allRecords.filter(r => r.date.startsWith(monthStr)).length;
+  document.getElementById('stat-month-label').textContent = months[parseInt(t.slice(5,7))-1];
+  document.getElementById('stat-wireless').textContent = allRecords.filter(r => r.interactionType === 'Wireless' || r.interactionType === 'Both').length;
+  document.getElementById('stat-wireline').textContent = allRecords.filter(r => r.interactionType === 'Wireline' || r.interactionType === 'Both').length;
+
+  const fuPending = allRecords.filter(r => r.followupRequired === 'Yes' && r.followupStatus !== 'Completed' && r.followupStatus !== 'Cancelled').length;
+  const fuCompleted = allRecords.filter(r => r.followupStatus === 'Completed').length;
+  const fuOverdue = allRecords.filter(r => isOverdue(r)).length;
+  document.getElementById('stat-pending').textContent = fuPending;
+  document.getElementById('stat-completed-fu').textContent = fuCompleted;
+  document.getElementById('stat-overdue').textContent = fuOverdue;
+
+  document.getElementById('greeting-time').textContent = getGreeting();
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-CA', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Recent interactions
+  const recent = allRecords.slice(0,8);
+  const recentEl = document.getElementById('dash-recent-list');
+  if (!recent.length) { recentEl.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg><h4>No records yet</h4><p>Add your first customer interaction.</p></div>`; }
+  else recentEl.innerHTML = recent.map(r => `
+    <div class="interaction-item" onclick="viewRecord('${r.id}')">
+      <div class="interaction-item-top">
+        <span class="interaction-item-name">${esc(r.customerName||r.account||'Unknown customer')}</span>
+        <span class="interaction-item-time">${esc(fmtDate(r.date))} ${esc(r.time||'')}</span>
+      </div>
+      <div class="interaction-item-sub">${typeBadge(r.interactionType)} ${esc(r.channel||'')} ${r.saleCompleted==='Yes'?'<span class="badge badge-green" style="margin-left:4px">Sale</span>':''}</div>
+    </div>`).join('');
+
+  // Upcoming follow-ups
+  const upcoming = allRecords.filter(r => r.followupRequired === 'Yes' && r.followupStatus === 'Pending' && r.followupDue && r.followupDue >= t).sort((a,b)=>a.followupDue.localeCompare(b.followupDue)).slice(0,5);
+  const fuEl = document.getElementById('dash-followup-list');
+  if (!upcoming.length) fuEl.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><h4>No upcoming follow-ups</h4></div>`;
+  else fuEl.innerHTML = upcoming.map(r => `
+    <div class="interaction-item" onclick="navigate('followups')">
+      <div class="interaction-item-top">
+        <span class="interaction-item-name">${esc(r.customerName||r.account||'Customer')}</span>
+        <span class="interaction-item-time">${esc(fmtDate(r.followupDue))}</span>
+      </div>
+      <div class="interaction-item-sub"><span class="${isPriority(r.followupPriority)}">${esc(r.followupPriority||'Normal')}</span> · ${esc(r.followupReason||'—')}</div>
+    </div>`).join('');
+
+  // Overdue
+  const overdue = allRecords.filter(r => isOverdue(r)).sort((a,b)=>a.followupDue.localeCompare(b.followupDue)).slice(0,5);
+  const odEl = document.getElementById('dash-overdue-list');
+  if (!overdue.length) odEl.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><h4>No overdue follow-ups</h4><p>You're all caught up!</p></div>`;
+  else odEl.innerHTML = overdue.map(r => `
+    <div class="interaction-item" onclick="navigate('followups')">
+      <div class="interaction-item-top">
+        <span class="interaction-item-name" style="color:var(--red)">${esc(r.customerName||r.account||'Customer')}</span>
+        <span class="interaction-item-time" style="color:var(--red)">Due ${esc(fmtDate(r.followupDue))}</span>
+      </div>
+      <div class="interaction-item-sub">${esc(r.followupReason||'—')}</div>
+    </div>`).join('');
+}
+
+// ===== FOLLOW-UP BADGE =====
+function updateBadge() {
+  const count = allRecords.filter(r => r.followupRequired === 'Yes' && r.followupStatus !== 'Completed' && r.followupStatus !== 'Cancelled').length;
+  const badge = document.getElementById('followup-badge');
+  const mobBtn = document.getElementById('mob-followup-btn');
+  if (count > 0) {
+    badge.style.display = '';
+    badge.textContent = count;
+    mobBtn.setAttribute('data-badge', count);
+    mobBtn.classList.add('mob-nav-badge');
+  } else {
+    badge.style.display = 'none';
+    mobBtn.removeAttribute('data-badge');
+    mobBtn.classList.remove('mob-nav-badge');
+  }
+}
+
+// ===== FOLLOW-UPS PAGE =====
+function renderFollowUps() {
+  const t = today();
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+  const withFU = allRecords.filter(r => r.followupRequired === 'Yes');
+  const overdue = withFU.filter(r => isOverdue(r)).sort((a,b)=>a.followupDue.localeCompare(b.followupDue));
+  const dueToday = withFU.filter(r => r.followupDue === t && r.followupStatus !== 'Completed' && r.followupStatus !== 'Cancelled' && !isOverdue(r));
+  const dueTomorrow = withFU.filter(r => r.followupDue === tomorrowStr && r.followupStatus !== 'Completed' && r.followupStatus !== 'Cancelled');
+  const upcoming = withFU.filter(r => r.followupDue > tomorrowStr && r.followupStatus !== 'Completed' && r.followupStatus !== 'Cancelled').sort((a,b)=>a.followupDue.localeCompare(b.followupDue));
+  const completed = withFU.filter(r => r.followupStatus === 'Completed').sort((a,b)=>(b.followupCompleted||b.followupDue).localeCompare(a.followupCompleted||a.followupDue));
+
+  renderFUSection('followup-overdue', '🔴 Overdue', overdue, 'overdue');
+  renderFUSection('followup-today', '🟡 Due Today', dueToday, 'today');
+  renderFUSection('followup-tomorrow', '🔵 Due Tomorrow', dueTomorrow, 'upcoming');
+  renderFUSection('followup-upcoming', '📅 Upcoming', upcoming, 'upcoming');
+  renderFUSection('followup-completed', '✅ Completed', completed, 'completed', true);
+}
+
+function renderFUSection(elId, title, records, cls, readonly=false) {
+  const el = document.getElementById(elId);
+  if (!records.length) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="followup-section">
+    <div class="followup-section-title">${title} (${records.length})</div>
+    ${records.map(r => `<div class="followup-card ${cls}">
+      <div class="followup-info">
+        <div class="followup-name">${esc(r.customerName||r.account||'Customer')} ${typeBadge(r.interactionType)}</div>
+        <div class="followup-sub">
+          Due: <strong>${esc(fmtDate(r.followupDue))}</strong> · 
+          <span class="${isPriority(r.followupPriority)}">${esc(r.followupPriority||'Normal')}</span> · 
+          ${esc(r.followupReason||'—')}
+          ${r.phone ? ' · ' + esc(r.phone) : ''}
+        </div>
+        ${r.followupNotes ? `<div class="followup-sub" style="margin-top:3px;font-style:italic">${esc(r.followupNotes)}</div>` : ''}
+      </div>
+      <div class="followup-actions">
+        <button class="btn btn-ghost btn-sm" onclick="viewRecord('${r.id}')">View</button>
+        <button class="btn btn-ghost btn-sm" onclick="editRecord('${r.id}')">Edit</button>
+        ${!readonly ? `<button class="btn btn-success btn-sm" onclick="markFUComplete('${r.id}')">Complete</button>` : ''}
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+async function markFUComplete(id) {
+  const r = allRecords.find(x => x.id === id);
+  if (!r) return;
+  r.followupStatus = 'Completed';
+  r.followupCompleted = today();
+  r.updatedAt = Date.now();
+  try {
+    await dbPut(r);
+    const idx = allRecords.findIndex(x => x.id === id);
+    if (idx > -1) allRecords[idx] = r;
+    updateBadge();
+    toast('Follow-up marked as completed.', 'success');
+    renderFollowUps();
+    if (currentPage === 'dashboard') renderDashboard();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+}
+
+// ===== CALENDAR =====
+function initCalendar() {
+  const now = new Date();
+  currentCalYear = now.getFullYear();
+  currentCalMonth = now.getMonth();
+}
+
+function changeMonth(dir) {
+  currentCalMonth += dir;
+  if (currentCalMonth > 11) { currentCalMonth = 0; currentCalYear++; }
+  if (currentCalMonth < 0) { currentCalMonth = 11; currentCalYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = months[currentCalMonth] + ' ' + currentCalYear;
+  const t = today();
+  const grid = document.getElementById('cal-grid');
+
+  // Build day headers
+  const dayAbbrevs = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = dayAbbrevs.map(d => `<div class="cal-header">${d}</div>`).join('');
+
+  // First day of month
+  const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+  const daysInMonth = new Date(currentCalYear, currentCalMonth+1, 0).getDate();
+  const daysInPrevMonth = new Date(currentCalYear, currentCalMonth, 0).getDate();
+
+  // Build lookup by date
+  const byDate = {};
+  allRecords.forEach(r => {
+    if (!byDate[r.date]) byDate[r.date] = [];
+    byDate[r.date].push(r);
+  });
+
+  function dayCell(dateStr, label, otherMonth=false) {
+    const recs = byDate[dateStr] || [];
+    const wireless = recs.filter(r => r.interactionType === 'Wireless' || r.interactionType === 'Both').length;
+    const wireline = recs.filter(r => r.interactionType === 'Wireline' || r.interactionType === 'Both').length;
+    const fuDue = recs.filter(r => r.followupRequired === 'Yes' && r.followupDue === dateStr).length;
+    const isToday = dateStr === t;
+    return `<div class="cal-day${otherMonth?' other-month':''}${isToday?' today':''}" onclick="showCalDayDetail('${dateStr}')">
+      <div class="cal-date-num">${label}</div>
+      ${recs.length ? `<div class="cal-count">
+        ${wireless ? `<span class="cal-dot wireless"></span>${wireless}W ` : ''}
+        ${wireline ? `<span class="cal-dot wireline"></span>${wireline}L ` : ''}
+        ${recs.length && !wireless && !wireline ? `${recs.length} int. ` : ''}
+        ${fuDue ? `<br><span style="color:var(--amber);font-size:.65rem">📋 ${fuDue} FU</span>` : ''}
+      </div>` : ''}
+    </div>`;
+  }
+
+  // Previous month days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = daysInPrevMonth - i;
+    const dateStr = `${currentCalYear}-${String(currentCalMonth).padStart(2,'0') || '12'}-${String(d).padStart(2,'0')}`;
+    // Fix prev month year/month
+    const prevDate = new Date(currentCalYear, currentCalMonth, 1 - (i+1));
+    const ds = prevDate.toISOString().split('T')[0];
+    html += dayCell(ds, d, true);
+  }
+
+  // Current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = currentCalYear + '-' + String(currentCalMonth+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    html += dayCell(dateStr, d);
+  }
+
+  // Fill remaining cells
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  let nextDay = 1;
+  for (let i = firstDay + daysInMonth; i < totalCells; i++) {
+    const nextDate = new Date(currentCalYear, currentCalMonth+1, nextDay);
+    const ds = nextDate.toISOString().split('T')[0];
+    html += dayCell(ds, nextDay++, true);
+  }
+
+  grid.innerHTML = html;
+  document.getElementById('cal-day-detail').style.display = 'none';
+}
+
+function showCalDayDetail(dateStr) {
+  const recs = allRecords.filter(r => r.date === dateStr);
+  const det = document.getElementById('cal-day-detail');
+  document.getElementById('cal-day-detail-title').textContent = fmtDate(dateStr) + ' — ' + recs.length + ' interaction' + (recs.length!==1?'s':'');
+  const recEl = document.getElementById('cal-day-records');
+  if (!recs.length) { recEl.innerHTML = '<div class="empty-state" style="padding:20px 0"><p>No interactions on this day.</p></div>'; }
+  else recEl.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Time</th><th>Customer</th><th>Type</th><th>Channel</th><th>Sale</th><th>Follow-Up</th><th></th></tr></thead><tbody>
+    ${recs.map(r => `<tr>
+      <td>${esc(r.time||'—')}</td>
+      <td>${esc(r.customerName||r.account||'—')}</td>
+      <td>${typeBadge(r.interactionType)}</td>
+      <td>${esc(r.channel||'—')}</td>
+      <td>${r.saleCompleted==='Yes'?'<span class="badge badge-green">Yes</span>':'—'}</td>
+      <td>${followupBadge(r)}</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="viewRecord('${r.id}')">View</button></td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+  det.style.display = '';
+  det.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ===== REPORTS =====
+function clearReportFilter() {
+  document.getElementById('rpt-from').value = '';
+  document.getElementById('rpt-to').value = '';
+  renderReports();
+}
+
+function getReportRecords() {
+  const from = document.getElementById('rpt-from').value;
+  const to = document.getElementById('rpt-to').value;
+  let records = [...allRecords];
+  if (from) records = records.filter(r => r.date >= from);
+  if (to) records = records.filter(r => r.date <= to);
+  return records;
+}
+
+function renderReports() {
+  const records = getReportRecords();
+  const t = today();
+  const wStart = startOfWeek(t);
+  const wEnd = endOfWeek(t);
+  const monthStr = t.slice(0,7);
+
+  // Summary stats
+  const daily = records.filter(r => r.date === t).length;
+  const weekly = records.filter(r => r.date >= wStart && r.date <= wEnd).length;
+  const monthly = records.filter(r => r.date.startsWith(monthStr)).length;
+  document.getElementById('rpt-stats').innerHTML = `
+    <div class="stat-card green"><div class="stat-label">Today</div><div class="stat-value">${daily}</div></div>
+    <div class="stat-card"><div class="stat-label">This Week</div><div class="stat-value">${weekly}</div></div>
+    <div class="stat-card"><div class="stat-label">This Month</div><div class="stat-value">${monthly}</div></div>
+    <div class="stat-card"><div class="stat-label">Filtered Total</div><div class="stat-value">${records.length}</div></div>
+  `;
+
+  // Donut: type breakdown
+  const wireless = records.filter(r => r.interactionType === 'Wireless').length;
+  const wireline = records.filter(r => r.interactionType === 'Wireline').length;
+  const other = records.length - wireless - wireline;
+  const circ = 2 * Math.PI * 50; // circumference
+  const total = records.length || 1;
+  const wArc = (wireless / total) * circ;
+  const lArc = (wireline / total) * circ;
+  document.getElementById('donut-wireless-arc').setAttribute('stroke-dasharray', `${wArc} ${circ}`);
+  const wOffset = 0;
+  document.getElementById('donut-wireline-arc').setAttribute('stroke-dasharray', `${lArc} ${circ}`);
+  document.getElementById('donut-wireline-arc').setAttribute('stroke-dashoffset', -(wArc));
+  document.getElementById('donut-total').textContent = records.length;
+  document.getElementById('legend-wireless').textContent = `Wireless: ${wireless}`;
+  document.getElementById('legend-wireline').textContent = `Wireline: ${wireline}`;
+  document.getElementById('legend-other').textContent = `Other / Both: ${other}`;
+
+  // Resolution chart
+  const res = {Yes:0,No:0,Partially:0};
+  records.forEach(r => { if (r.issueResolved) res[r.issueResolved] = (res[r.issueResolved]||0)+1; });
+  document.getElementById('rpt-resolved-chart').innerHTML = barChart([
+    {label:'Resolved',val:res.Yes,cls:'green'},{label:'Partially',val:res.Partially,cls:'amber'},{label:'Unresolved',val:res.No,cls:''}
+  ], records.length);
+
+  // Follow-up completion
+  const fuTotal = records.filter(r => r.followupRequired === 'Yes').length;
+  const fuDone = records.filter(r => r.followupStatus === 'Completed').length;
+  const fuPending = records.filter(r => r.followupRequired === 'Yes' && r.followupStatus === 'Pending').length;
+  const fuOverdue = records.filter(r => isOverdue(r)).length;
+  document.getElementById('rpt-followup-chart').innerHTML = barChart([
+    {label:'Completed',val:fuDone,cls:'green'},{label:'Pending',val:fuPending,cls:'amber'},{label:'Overdue',val:fuOverdue,cls:''}
+  ], fuTotal || 1);
+
+  // Sales
+  const saleYes = records.filter(r => r.saleCompleted === 'Yes').length;
+  const saleNo = records.filter(r => r.saleCompleted === 'No').length;
+  document.getElementById('rpt-sales-chart').innerHTML = barChart([
+    {label:'Sale completed',val:saleYes,cls:'green'},{label:'No sale',val:saleNo,cls:''}
+  ], records.length);
+
+  // Services breakdown
+  const svcCount = {};
+  records.forEach(r => {
+    getServices(r).forEach(s => { svcCount[s] = (svcCount[s]||0)+1; });
+  });
+  const topSvcs = Object.entries(svcCount).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const maxSvc = topSvcs.length ? topSvcs[0][1] : 1;
+  document.getElementById('rpt-services-chart').innerHTML = topSvcs.length
+    ? barChart(topSvcs.map(([label,val])=>({label,val})), maxSvc)
+    : '<div class="empty-state" style="padding:20px 0"><p>No service data yet.</p></div>';
+
+  // Daily trend (last 30 days)
+  const days30 = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    days30.push({ date: ds, label: String(d.getDate()), count: records.filter(r => r.date === ds).length });
+  }
+  const maxDay = Math.max(...days30.map(d => d.count), 1);
+  document.getElementById('rpt-daily-chart').innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:3px;height:80px;padding:0 4px">
+      ${days30.map(d => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px" title="${d.date}: ${d.count}">
+        <div style="flex:1;display:flex;align-items:flex-end;width:100%">
+          <div style="width:100%;background:${d.count>0?'var(--accent)':'var(--grey-100)'};border-radius:2px 2px 0 0;height:${d.count?Math.max(4,Math.round(d.count/maxDay*70))+'px':'4px'}"></div>
+        </div>
+        <div style="font-size:.58rem;color:var(--text-muted)">${d.count>0?d.count:''}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--text-muted);padding:4px 4px 0">
+      <span>${fmtDate(days30[0].date)}</span><span>Today</span>
+    </div>`;
+
+  // Monthly breakdown
+  const monthlyMap = {};
+  records.forEach(r => {
+    const mo = r.date.slice(0,7);
+    if (!monthlyMap[mo]) monthlyMap[mo] = 0;
+    monthlyMap[mo]++;
+  });
+  const monthlyEntries = Object.entries(monthlyMap).sort().slice(-12).map(([mo,val]) => {
+    const [y,m] = mo.split('-');
+    const ms = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return { label: ms[parseInt(m)-1]+' '+y, val };
+  });
+  const maxMonth = Math.max(...monthlyEntries.map(e=>e.val), 1);
+  document.getElementById('rpt-monthly-chart').innerHTML = monthlyEntries.length
+    ? barChart(monthlyEntries, maxMonth)
+    : '<div class="empty-state" style="padding:20px 0"><p>No data yet.</p></div>';
+}
+
+function barChart(items, maxVal) {
+  return items.map(item => `
+    <div class="chart-bar-row">
+      <div class="chart-bar-label" title="${esc(item.label)}">${esc(item.label)}</div>
+      <div class="chart-bar-track">
+        <div class="chart-bar-fill ${item.cls||''}" style="width:${maxVal?Math.round((item.val/maxVal)*100):0}%">${item.val > 0 ? item.val : ''}</div>
+      </div>
+      <div class="chart-bar-val">${item.val}</div>
+    </div>`).join('');
+}
+
+// ===== BACKUP / RESTORE =====
+function renderBackupInfo() {
+  const el = document.getElementById('backup-info');
+  const last = settings.lastBackup ? new Date(settings.lastBackup).toLocaleDateString('en-CA', {dateStyle:'medium',timeStyle:'short'}) : 'Never';
+  el.innerHTML = `<strong>${allRecords.length}</strong> records stored &nbsp;·&nbsp; Last backup: <strong>${last}</strong>`;
+}
+
+function exportJSON() {
+  const data = { version: 1, exportedAt: new Date().toISOString(), repName: settings.repName||'', location: settings.location||'', records: allRecords };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'salestrack-backup-' + today() + '.json';
+  a.click(); URL.revokeObjectURL(url);
+  saveSetting('lastBackup', Date.now());
+  toast('JSON backup downloaded (' + allRecords.length + ' records).', 'success');
+  renderBackupInfo();
+}
+
+function exportCSV() {
+  const records = (currentPage === 'reports') ? getReportRecords() : allRecords;
+  const headers = ['ID','Date','Day','Time','Customer Name','Account #','Phone','Type','Channel','Wireless Services','Wireline Services','Custom Services','Reason','Customer Request','Notes','Action Taken','Product Discussed','Outcome','Issue Resolved','Sale Completed','Comments','Follow-Up Required','Follow-Up Reason','Follow-Up Due','Follow-Up Priority','Follow-Up Status','Follow-Up Notes','Date Completed','Escalated','Escalation Details','Appt Date','Ref #','Tags'];
+  function csvField(v) {
+    if (v === null || v === undefined) return '';
+    const s = Array.isArray(v) ? v.join('; ') : String(v);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+  const rows = [headers.join(',')];
+  records.forEach(r => {
+    rows.push([r.id,r.date,r.dayOfWeek,r.time,r.customerName,r.account,r.phone,r.interactionType,r.channel,r.wirelessServices,r.wirelineServices,r.customServices,r.reason,r.customerRequest,r.notes,r.actionTaken,r.productDiscussed,r.outcome,r.issueResolved,r.saleCompleted,r.additionalComments,r.followupRequired,r.followupReason,r.followupDue,r.followupPriority,r.followupStatus,r.followupNotes,r.followupCompleted,r.escalated,r.escalationDetails,r.appointmentDate,r.refNumber,r.tags].map(csvField).join(','));
+  });
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'salestrack-export-' + today() + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('CSV exported (' + records.length + ' records).', 'success');
+}
+
+// Drag and drop
+const dropZone = document.getElementById('import-drop');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) processImportFile(file);
+});
+
+function handleImport(input) {
+  if (input.files[0]) processImportFile(input.files[0]);
+  input.value = '';
+}
+
+let pendingImportRecords = null;
+function processImportFile(file) {
+  if (!file.name.endsWith('.json')) { toast('Please select a .json backup file.', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      let records = [];
+      if (Array.isArray(data)) records = data;
+      else if (data.records && Array.isArray(data.records)) records = data.records;
+      else { toast('Invalid backup file format.', 'error'); return; }
+      if (!records.length) { toast('No records found in file.', 'warning'); return; }
+      // Detect duplicates
+      const existingIds = new Set(allRecords.map(r => r.id));
+      const dupes = records.filter(r => existingIds.has(r.id)).length;
+      const newCount = records.length - dupes;
+      pendingImportRecords = records;
+      document.getElementById('import-preview-body').innerHTML = `
+        <div class="detail-grid" style="margin-bottom:14px">
+          <div class="detail-item"><div class="detail-key">Records in file</div><div class="detail-val" style="font-size:1.4rem;font-weight:800">${records.length}</div></div>
+          <div class="detail-item"><div class="detail-key">New records</div><div class="detail-val" style="font-size:1.4rem;font-weight:800;color:var(--green)">${newCount}</div></div>
+          <div class="detail-item"><div class="detail-key">Duplicate IDs (skipped)</div><div class="detail-val" style="font-size:1.4rem;font-weight:800;color:var(--amber)">${dupes}</div></div>
+        </div>
+        ${dupes > 0 ? '<div class="disclaimer"><strong>Note:</strong> Duplicate records (same ID as existing records) will be skipped. Existing data will not be overwritten.</div>' : ''}
+        <p style="font-size:.84rem;color:var(--text-muted)">Click "Import Records" to add ${newCount} new record${newCount!==1?'s':''} to your database.</p>
+      `;
+      document.getElementById('import-confirm-btn').onclick = doImport;
+      document.getElementById('modal-import').classList.add('open');
+    } catch(err) {
+      toast('Error reading file: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+async function doImport() {
+  if (!pendingImportRecords) return;
+  closeModal('modal-import');
+  const existingIds = new Set(allRecords.map(r => r.id));
+  const toAdd = pendingImportRecords.filter(r => !existingIds.has(r.id));
+  let added = 0;
+  for (const r of toAdd) {
+    try { await dbAdd(r); allRecords.push(r); added++; } catch(e) {}
+  }
+  allRecords.sort((a,b) => b.date.localeCompare(a.date));
+  updateBadge();
+  toast(`Imported ${added} record${added!==1?'s':''} successfully.`, 'success');
+  pendingImportRecords = null;
+  renderBackupInfo();
+}
+
+async function clearAllRecords() {
+  confirm('Clear All Records', `Are you absolutely sure you want to permanently delete ALL ${allRecords.length} records? This action cannot be undone. Export a backup first.`, async () => {
+    confirm('Final Confirmation', 'This is irreversible. All customer records will be permanently deleted. Proceed?', async () => {
+      try {
+        await dbClear();
+        allRecords = [];
+        updateBadge();
+        toast('All records have been permanently deleted.', 'warning');
+        renderBackupInfo();
+        document.getElementById('settings-record-count').textContent = '0 records';
+        if (currentPage === 'dashboard') renderDashboard();
+        if (currentPage === 'records') filterRecords();
+      } catch(e) { toast('Error: ' + e.message, 'error'); }
+    });
+  });
+}
+
+// ===== INIT =====
+async function init() {
+  try {
+    await openDB();
+    allRecords = await dbGetAll();
+    allRecords.sort((a,b) => b.date.localeCompare(a.date) || (b.time||'').localeCompare(a.time||''));
+    loadSettings();
+    initCalendar();
+    clearForm();
+    renderDashboard();
+    updateBadge();
+    filterRecords();
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div style="padding:40px;text-align:center;color:var(--red)">
+      <h3>Unable to open database</h3>
+      <p>IndexedDB may be unavailable (e.g. private browsing mode or browser restrictions).<br>Try opening this file in a normal browser window.</p>
+      <p style="margin-top:12px;font-size:.82rem;color:var(--text-muted)">${e.message}</p>
+    </div>`;
+  }
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+init();
+</script>
+</body>
+</html>
